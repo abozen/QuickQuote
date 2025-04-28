@@ -11,6 +11,7 @@ interface TableSettingsProps {
   vatRate: number;
   priceIncreaseRate: number;
   date: string;
+  showCurrency: boolean;
   onRoundToWholeChange: (checked: boolean) => void;
   onShowVergiNoChange: (checked: boolean) => void;
   onShowOdemeBilgileriChange: (checked: boolean) => void;
@@ -19,6 +20,7 @@ interface TableSettingsProps {
   onVatRateChange: (value: number) => void;
   onPriceIncreaseRateChange: (value: number) => void;
   onDateChange: (value: string) => void;
+  onShowCurrencyChange: (checked: boolean) => void;
   jsonData: string;
   onJsonDataChange: (value: string) => void;
   onProductsExtracted: (products: Product[]) => void;
@@ -33,6 +35,7 @@ export default function TableSettings({
   vatRate,
   priceIncreaseRate,
   date,
+  showCurrency,
   onRoundToWholeChange,
   onShowVergiNoChange,
   onShowOdemeBilgileriChange,
@@ -41,6 +44,7 @@ export default function TableSettings({
   onVatRateChange,
   onPriceIncreaseRateChange,
   onDateChange,
+  onShowCurrencyChange,
   jsonData,
   onJsonDataChange,
   onProductsExtracted
@@ -147,6 +151,16 @@ export default function TableSettings({
               />
             }
             label="Notları dahil et"
+          />
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={showCurrency}
+                onChange={(e) => onShowCurrencyChange(e.target.checked)}
+                color="primary"
+              />
+            }
+            label="Para birimini göster"
           />
         </Grid>
 
