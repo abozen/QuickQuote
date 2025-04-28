@@ -69,14 +69,32 @@ export default function Home() {
     const element = document.getElementById('teklif-pdf');
     if (element) {
       const opt = {
-        margin: 1,
+        margin: [5, 5, 5, 5], // Minimal margins (top, right, bottom, left) in mm
         filename: 'teklif.pdf',
         image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2 },
-        jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+        html2canvas: { 
+          scale: 2, // Higher scale for better quality
+          useCORS: true,
+          logging: false,
+          letterRendering: true,
+          allowTaint: true
+        },
+        jsPDF: { 
+          unit: 'mm', 
+          format: 'a4', 
+          orientation: 'landscape',
+          compress: true,
+          precision: 16,
+          hotfixes: ["px_scaling"]
+        },
+        pagebreak: { mode: ['avoid-all'] } // Try to avoid breaking elements
       };
-
-      html2pdf().set(opt).from(element).save();
+  
+      // Create promise to handle PDF generation
+      html2pdf().set(opt).from(element).save().catch(err => {
+        console.error('PDF generation error:', err);
+        alert('PDF oluşturulurken bir hata oluştu. Lütfen tekrar deneyiniz.');
+      });
     }
   };
 
