@@ -1,103 +1,213 @@
-import Image from "next/image";
+'use client';
+
+import React, { useState } from 'react';
+import { Box, Tabs, Tab, Button } from '@mui/material';
+import CompanyInfo from '@/components/CompanyInfo';
+import ClientInfo from '@/components/ClientInfo';
+import TableSettings from '@/components/TableSettings';
+import ProductTable from '@/components/ProductTable';
+import QuotePreview from '@/components/QuotePreview';
+import { Quote, Product } from '@/types';
+import html2pdf from 'html2pdf.js';
+
+interface TabPanelProps {
+  children?: React.ReactNode;
+  index: number;
+  value: number;
+}
+
+function TabPanel(props: TabPanelProps) {
+  const { children, value, index, ...other } = props;
+
+  return (
+    <div
+      role="tabpanel"
+      hidden={value !== index}
+      id={`simple-tabpanel-${index}`}
+      aria-labelledby={`simple-tab-${index}`}
+      {...other}
+    >
+      {value === index && (
+        <Box sx={{ p: 3 }}>
+          {children}
+        </Box>
+      )}
+    </div>
+  );
+}
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const [tabValue, setTabValue] = useState(0);
+  const [roundToWhole, setRoundToWhole] = useState(false);
+  const [showVergiNo, setShowVergiNo] = useState(true);
+  const [showOdemeBilgileri, setShowOdemeBilgileri] = useState(true);
+  const [showNotlar, setShowNotlar] = useState(true);
+  const [vatIncluded, setVatIncluded] = useState(true);
+  const [vatRate, setVatRate] = useState(20);
+  const [priceIncreaseRate, setPriceIncreaseRate] = useState(0);
+  const [jsonData, setJsonData] = useState('');
+  const [quote, setQuote] = useState<Quote>({
+    companyInfo: {
+      name: '',
+      phone: '',
+      address: '',
+      date: new Date().toLocaleDateString('tr-TR'),
+      clientName: '',
+      logo: ''
+    },
+    products: [],
+    subtotal: 0,
+    vatAmount: 0,
+    vatRate: 20
+  });
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+    setTabValue(newValue);
+  };
+
+  const handleExportPDF = () => {
+    const element = document.getElementById('teklif-pdf');
+    if (element) {
+      const opt = {
+        margin: 1,
+        filename: 'teklif.pdf',
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+      };
+
+      html2pdf().set(opt).from(element).save();
+    }
+  };
+
+  const handleCompanyInfoChange = (field: keyof typeof quote.companyInfo, value: string) => {
+    setQuote(prev => ({
+      ...prev,
+      companyInfo: {
+        ...prev.companyInfo,
+        [field]: value
+      }
+    }));
+  };
+
+  const handleProductsExtracted = (products: Product[]) => {
+    const subtotal = products.reduce((sum, product) => sum + product.totalPrice, 0);
+    const vatAmount = vatIncluded ? subtotal * (vatRate / 100) : 0;
+
+    setQuote(prev => ({
+      ...prev,
+      products,
+      subtotal,
+      vatAmount,
+      vatRate
+    }));
+  };
+
+  const handleVatRateChange = (newRate: number) => {
+    setVatRate(newRate);
+    const subtotal = quote.products.reduce((sum, product) => sum + product.totalPrice, 0);
+    const vatAmount = vatIncluded ? subtotal * (newRate / 100) : 0;
+
+    setQuote(prev => ({
+      ...prev,
+      vatRate: newRate,
+      vatAmount
+    }));
+  };
+
+  const handleVatIncludedChange = (included: boolean) => {
+    setVatIncluded(included);
+    const subtotal = quote.products.reduce((sum, product) => sum + product.totalPrice, 0);
+    const vatAmount = included ? subtotal * (vatRate / 100) : 0;
+
+    setQuote(prev => ({
+      ...prev,
+      vatAmount
+    }));
+  };
+
+  return (
+    <Box sx={{ width: '100%', maxWidth: 1200, mx: 'auto', p: 3 }}>
+      <CompanyInfo
+        name={quote.companyInfo.name}
+        phone={quote.companyInfo.phone}
+        address={quote.companyInfo.address}
+        logo={quote.companyInfo.logo}
+        onNameChange={(value) => handleCompanyInfoChange('name', value)}
+        onPhoneChange={(value) => handleCompanyInfoChange('phone', value)}
+        onAddressChange={(value) => handleCompanyInfoChange('address', value)}
+        onLogoChange={(value) => handleCompanyInfoChange('logo', value)}
+      />
+
+      <ClientInfo 
+        clientName={quote.companyInfo.clientName}
+        onClientNameChange={(value) => handleCompanyInfoChange('clientName', value)}
+      />
+
+      <TableSettings
+        roundToWhole={roundToWhole}
+        showVergiNo={showVergiNo}
+        showOdemeBilgileri={showOdemeBilgileri}
+        showNotlar={showNotlar}
+        vatIncluded={vatIncluded}
+        vatRate={vatRate}
+        priceIncreaseRate={priceIncreaseRate}
+        date={quote.companyInfo.date}
+        onRoundToWholeChange={setRoundToWhole}
+        onShowVergiNoChange={setShowVergiNo}
+        onShowOdemeBilgileriChange={setShowOdemeBilgileri}
+        onShowNotlarChange={setShowNotlar}
+        onVatIncludedChange={handleVatIncludedChange}
+        onVatRateChange={handleVatRateChange}
+        onPriceIncreaseRateChange={setPriceIncreaseRate}
+        onDateChange={(value) => handleCompanyInfoChange('date', value)}
+        jsonData={jsonData}
+        onJsonDataChange={setJsonData}
+        onProductsExtracted={handleProductsExtracted}
+      />
+
+      <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+        <Tabs value={tabValue} onChange={handleTabChange}>
+          <Tab label="Ürün Yönetimi" />
+          <Tab label="Önizleme" />
+        </Tabs>
+      </Box>
+
+      <TabPanel value={tabValue} index={0}>
+        <ProductTable
+          products={quote.products}
+          onChange={(products) => setQuote({ ...quote, products })}
+          subtotal={quote.subtotal}
+          vatAmount={quote.vatAmount}
+          vatIncluded={vatIncluded}
+          vatRate={vatRate}
+        />
+      </TabPanel>
+
+      <TabPanel value={tabValue} index={1}>
+        <Box sx={{ mb: 2, textAlign: 'right' }}>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={handleExportPDF}
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+            PDF Olarak İndir
+          </Button>
+        </Box>
+        <QuotePreview
+          quote={quote}
+          bankaBilgileri={{
+            banka: 'Örnek Bank',
+            iban: 'TR00 0000 0000 0000 0000 0000 00',
+            email: 'ornek@email.com'
+          }}
+          notlar="Örnek notlar buraya gelecek..."
+          roundToWhole={roundToWhole}
+          showVergiNo={showVergiNo}
+          showOdemeBilgileri={showOdemeBilgileri}
+          showNotlar={showNotlar}
+        />
+      </TabPanel>
+    </Box>
   );
 }
