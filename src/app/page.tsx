@@ -240,6 +240,8 @@ export default function Home() {
         vatRate={vatRate}
         priceIncreaseRate={priceIncreaseRate}
         date={quote.companyInfo.date}
+        products={quote.products}
+        showCurrency={true}
         onRoundToWholeChange={setRoundToWhole}
         onShowVergiNoChange={setShowVergiNo}
         onShowOdemeBilgileriChange={setShowOdemeBilgileri}
@@ -248,6 +250,7 @@ export default function Home() {
         onVatRateChange={handleVatRateChange}
         onPriceIncreaseRateChange={setPriceIncreaseRate}
         onDateChange={(value) => handleCompanyInfoChange('date', value)}
+        onShowCurrencyChange={() => {}}
         jsonData={jsonData}
         onJsonDataChange={setJsonData}
         onProductsExtracted={handleProductsExtracted}

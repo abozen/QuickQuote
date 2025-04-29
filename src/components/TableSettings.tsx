@@ -13,6 +13,7 @@ interface TableSettingsProps {
   priceIncreaseRate: number;
   date: string;
   showCurrency: boolean;
+  products: Product[];
   onRoundToWholeChange: (checked: boolean) => void;
   onShowVergiNoChange: (checked: boolean) => void;
   onShowOdemeBilgileriChange: (checked: boolean) => void;
@@ -37,6 +38,7 @@ export default function TableSettings({
   priceIncreaseRate,
   date,
   showCurrency,
+  products,
   onRoundToWholeChange,
   onShowVergiNoChange,
   onShowOdemeBilgileriChange,
@@ -93,6 +95,27 @@ export default function TableSettings({
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handlePriceIncreaseRateChange = (newRate: number) => {
+    onPriceIncreaseRateChange(newRate);
+    
+    // Update all product prices with the new rate
+    const updatedProducts = products.map(product => {
+      const increasedUnitPrice = product.unitPrice / (1 + priceIncreaseRate / 100) * (1 + newRate / 100);
+      return {
+        ...product,
+        unitPrice: increasedUnitPrice,
+        totalPrice: increasedUnitPrice * product.quantity
+      };
+    });
+
+    // Calculate new totals
+    const newSubtotal = updatedProducts.reduce((sum, product) => sum + product.totalPrice, 0);
+    const newVatAmount = vatIncluded ? newSubtotal * (vatRate / 100) : 0;
+
+    // Update the quote with new values
+    onProductsExtracted(updatedProducts);
   };
 
   return (
@@ -189,7 +212,7 @@ export default function TableSettings({
             label="Zam Oranı (%)"
             type="number"
             value={priceIncreaseRate}
-            onChange={(e) => onPriceIncreaseRateChange(Number(e.target.value))}
+            onChange={(e) => handlePriceIncreaseRateChange(Number(e.target.value))}
             InputProps={{ inputProps: { min: 0 } }}
           />
         </Grid>
