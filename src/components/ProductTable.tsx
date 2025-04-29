@@ -126,6 +126,79 @@ export default function ProductTable({
 
   return (
     <Box>
+      {/* New Product Form - Moved to top */}
+      <Box sx={{ mb: 3, p: 2, background: '#f8fafd', borderRadius: 2 }}>
+        <Typography fontWeight={700} mb={2}>Yeni Ürün Ekle</Typography>
+        <Grid container spacing={2} alignItems="center">
+          <Grid item xs={12} sm={3}>
+            <TextField
+              fullWidth
+              label="Açıklama"
+              value={newProduct.description}
+              onChange={(e) => setNewProduct({ ...newProduct, description: e.target.value })}
+              size="small"
+            />
+          </Grid>
+          <Grid item xs={12} sm={2}>
+            <TextField
+              fullWidth
+              label="Marka"
+              value={newProduct.brand}
+              onChange={(e) => setNewProduct({ ...newProduct, brand: e.target.value })}
+              size="small"
+            />
+          </Grid>
+          <Grid item xs={12} sm={1}>
+            <TextField
+              fullWidth
+              label="Miktar"
+              type="number"
+              value={newProduct.quantity}
+              onChange={(e) => setNewProduct({ ...newProduct, quantity: Number(e.target.value) })}
+              size="small"
+            />
+          </Grid>
+          <Grid item xs={12} sm={1}>
+            <TextField
+              fullWidth
+              label="Birim"
+              value={newProduct.unit}
+              onChange={(e) => setNewProduct({ ...newProduct, unit: e.target.value })}
+              size="small"
+            />
+          </Grid>
+          <Grid item xs={12} sm={2}>
+            <TextField
+              fullWidth
+              label="Birim Fiyat"
+              type="number"
+              value={newProduct.unitPrice}
+              onChange={(e) => setNewProduct({ ...newProduct, unitPrice: Number(e.target.value) })}
+              size="small"
+            />
+          </Grid>
+          <Grid item xs={12} sm={2}>
+            <Button
+              fullWidth
+              variant="contained"
+              color="primary"
+              onClick={handleAddProduct}
+              disabled={!newProduct.description || !newProduct.unitPrice}
+              startIcon={<AddIcon />}
+              sx={{ 
+                height: '40px',
+                background: 'linear-gradient(90deg, #1565c0 60%, #1976d2 100%)',
+                '&:hover': {
+                  background: 'linear-gradient(90deg, #1976d2 60%, #1565c0 100%)',
+                },
+              }}
+            >
+              Ekle
+            </Button>
+          </Grid>
+        </Grid>
+      </Box>
+
       <DragDropContext onDragEnd={handleDragEnd}>
         <Droppable droppableId="products">
           {(provided) => (
@@ -143,106 +216,51 @@ export default function ProductTable({
                     <TableCell sx={{ color: 'white', fontWeight: 700 }}>İşlem</TableCell>
                   </TableRow>
                 </TableHead>
-                <TableBody {...provided.droppableProps} ref={provided.innerRef}>
-                  {products.map((product, index) => (
-                    <Draggable
-                      key={product.id}
-                      draggableId={product.id}
-                      index={index}
-                    >
-                      {(provided) => (
-                        <TableRow
-                          ref={provided.innerRef}
-                          {...provided.draggableProps}
-                          {...provided.dragHandleProps}
-                        >
-                          <TableCell>{index + 1}</TableCell>
-                          <TableCell>
-                            {editingId === product.id ? (
-                              <TextField
-                                fullWidth
-                                value={editProduct.description}
-                                onChange={(e) => setEditProduct({ ...editProduct, description: e.target.value })}
+                <TableBody>
+                  {products.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={8} align="center">
+                        Ürün eklenmedi
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    products.map((product, index) => (
+                      <Draggable key={product.id} draggableId={product.id} index={index}>
+                        {(provided) => (
+                          <TableRow
+                            ref={provided.innerRef}
+                            {...provided.draggableProps}
+                            {...provided.dragHandleProps}
+                            sx={{ '&:nth-of-type(odd)': { backgroundColor: '#f5f5f5' } }}
+                          >
+                            <TableCell>{index + 1}</TableCell>
+                            <TableCell>{product.description}</TableCell>
+                            <TableCell>{product.brand}</TableCell>
+                            <TableCell>{product.quantity}</TableCell>
+                            <TableCell>{product.unit}</TableCell>
+                            <TableCell>{formatNumber(product.unitPrice)}</TableCell>
+                            <TableCell>{formatNumber(product.totalPrice)}</TableCell>
+                            <TableCell>
+                              <IconButton
                                 size="small"
-                              />
-                            ) : (
-                              product.description
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            {editingId === product.id ? (
-                              <TextField
-                                fullWidth
-                                value={editProduct.brand}
-                                onChange={(e) => setEditProduct({ ...editProduct, brand: e.target.value })}
-                                size="small"
-                              />
-                            ) : (
-                              product.brand
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            {editingId === product.id ? (
-                              <TextField
-                                fullWidth
-                                type="number"
-                                value={editProduct.quantity}
-                                onChange={(e) => setEditProduct({ ...editProduct, quantity: parseInt(e.target.value) || 1 })}
-                                size="small"
-                                InputProps={{ inputProps: { min: 1 } }}
-                              />
-                            ) : (
-                              product.quantity
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            {editingId === product.id ? (
-                              <TextField
-                                fullWidth
-                                value={editProduct.unit}
-                                onChange={(e) => setEditProduct({ ...editProduct, unit: e.target.value })}
-                                size="small"
-                              />
-                            ) : (
-                              product.unit
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            {editingId === product.id ? (
-                              <TextField
-                                fullWidth
-                                type="number"
-                                value={editProduct.unitPrice}
-                                onChange={(e) => setEditProduct({ ...editProduct, unitPrice: parseFloat(e.target.value) || 0 })}
-                                size="small"
-                                InputProps={{ inputProps: { min: 0, step: 0.01 } }}
-                              />
-                            ) : (
-                              formatNumber(product.unitPrice, roundToWhole)
-                            )}
-                          </TableCell>
-                          <TableCell>{formatNumber(product.totalPrice, roundToWhole)}</TableCell>
-                          <TableCell>
-                            {editingId === product.id ? (
-                              <IconButton onClick={handleSaveEdit} color="primary">
-                                <SaveIcon />
+                                onClick={() => handleEditProduct(product)}
+                                sx={{ mr: 1 }}
+                              >
+                                <EditIcon fontSize="small" />
                               </IconButton>
-                            ) : (
-                              <>
-                                <IconButton onClick={() => handleEditProduct(product)} color="primary">
-                                  <EditIcon />
-                                </IconButton>
-                                <IconButton onClick={() => handleDeleteProduct(product.id)} color="error">
-                                  <DeleteIcon />
-                                </IconButton>
-                              </>
-                            )}
-                          </TableCell>
-                        </TableRow>
-                      )}
-                    </Draggable>
-                  ))}
-                  {provided.placeholder}
+                              <IconButton
+                                size="small"
+                                onClick={() => handleDeleteProduct(product.id)}
+                                color="error"
+                              >
+                                <DeleteIcon fontSize="small" />
+                              </IconButton>
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </Draggable>
+                    ))
+                  )}
                 </TableBody>
               </Table>
             </TableContainer>
@@ -279,134 +297,6 @@ export default function ProductTable({
           </Box>
         </Grid>
       </Grid>
-
-      {/* Yeni Ürün Ekleme Alanı */}
-      <Box sx={{ 
-        mt: 3, 
-        p: 3, 
-        background: '#f8fafd', 
-        borderRadius: 2,
-        boxShadow: 2
-      }}>
-        <Typography 
-          variant="h6" 
-          fontWeight={700} 
-          color="primary" 
-          sx={{ mb: 3 }}
-        >
-          Yeni Ürün veya Hizmet Ekle
-        </Typography>
-        <Grid container spacing={2} alignItems="center">
-          <Grid item xs={12} sm={3}>
-            <TextField
-              fullWidth
-              label="Açıklama"
-              value={newProduct.description}
-              onChange={(e) => setNewProduct({ ...newProduct, description: e.target.value })}
-              size="small"
-              sx={{ 
-                '& .MuiOutlinedInput-root': {
-                  backgroundColor: 'white',
-                  '&:hover fieldset': {
-                    borderColor: 'primary.main',
-                  },
-                },
-              }}
-            />
-          </Grid>
-          <Grid item xs={12} sm={2}>
-            <TextField
-              fullWidth
-              label="Marka"
-              value={newProduct.brand}
-              onChange={(e) => setNewProduct({ ...newProduct, brand: e.target.value })}
-              size="small"
-              sx={{ 
-                '& .MuiOutlinedInput-root': {
-                  backgroundColor: 'white',
-                  '&:hover fieldset': {
-                    borderColor: 'primary.main',
-                  },
-                },
-              }}
-            />
-          </Grid>
-          <Grid item xs={6} sm={1}>
-            <TextField
-              fullWidth
-              label="Miktar"
-              type="number"
-              value={newProduct.quantity}
-              onChange={(e) => setNewProduct({ ...newProduct, quantity: parseInt(e.target.value) || 1 })}
-              size="small"
-              InputProps={{ inputProps: { min: 1 } }}
-              sx={{ 
-                '& .MuiOutlinedInput-root': {
-                  backgroundColor: 'white',
-                  '&:hover fieldset': {
-                    borderColor: 'primary.main',
-                  },
-                },
-              }}
-            />
-          </Grid>
-          <Grid item xs={6} sm={2}>
-            <TextField
-              fullWidth
-              label="Birim"
-              value={newProduct.unit}
-              onChange={(e) => setNewProduct({ ...newProduct, unit: e.target.value })}
-              size="small"
-              sx={{ 
-                '& .MuiOutlinedInput-root': {
-                  backgroundColor: 'white',
-                  '&:hover fieldset': {
-                    borderColor: 'primary.main',
-                  },
-                },
-              }}
-            />
-          </Grid>
-          <Grid item xs={6} sm={2}>
-            <TextField
-              fullWidth
-              label="Malzeme Birim Fiyatı"
-              type="number"
-              value={newProduct.unitPrice}
-              onChange={(e) => setNewProduct({ ...newProduct, unitPrice: parseFloat(e.target.value) || 0 })}
-              size="small"
-              InputProps={{ inputProps: { min: 0, step: 0.01 } }}
-              sx={{ 
-                '& .MuiOutlinedInput-root': {
-                  backgroundColor: 'white',
-                  '&:hover fieldset': {
-                    borderColor: 'primary.main',
-                  },
-                },
-              }}
-            />
-          </Grid>
-          <Grid item xs={6} sm={2}>
-            <Button
-              fullWidth
-              variant="contained"
-              color="primary"
-              onClick={handleAddProduct}
-              disabled={!newProduct.description || !newProduct.unitPrice}
-              startIcon={<AddIcon />}
-              sx={{ 
-                height: '40px',
-                background: 'linear-gradient(90deg, #1565c0 60%, #1976d2 100%)',
-                '&:hover': {
-                  background: 'linear-gradient(90deg, #1976d2 60%, #1565c0 100%)',
-                },
-              }}
-            >
-              Ekle
-            </Button>
-          </Grid>
-        </Grid>
-      </Box>
 
       {/* Excel'e Aktar Butonu */}
       <Box sx={{ mt: 2, textAlign: 'right' }}>

@@ -11,6 +11,14 @@ interface CompanyInfoProps {
   onPhoneChange: (value: string) => void;
   onAddressChange: (value: string) => void;
   onLogoChange: (value: string) => void;
+  onSettingsChange?: (settings: {
+    roundToWhole: boolean;
+    showVergiNo: boolean;
+    showOdemeBilgileri: boolean;
+    showNotlar: boolean;
+    showCurrency: boolean;
+    vatIncluded: boolean;
+  }) => void;
 }
 
 export default function CompanyInfo({ 
@@ -21,7 +29,8 @@ export default function CompanyInfo({
   onNameChange,
   onPhoneChange,
   onAddressChange,
-  onLogoChange
+  onLogoChange,
+  onSettingsChange
 }: CompanyInfoProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -33,6 +42,26 @@ export default function CompanyInfo({
         onLogoChange(reader.result as string);
       };
       reader.readAsDataURL(file);
+    }
+  };
+
+  const handlePresetClick = () => {
+    // Set company info
+    onNameChange("ÖZEN ELEKTRİK");
+    onPhoneChange("0(532) 383 87 17 - 0(212) 254 00 70");
+    onAddressChange("MÜVERRİH ALİ CAD. NO:51 HASKÖY BEYOĞLU");
+    onLogoChange("/logo.png");
+
+    // Set default settings
+    if (onSettingsChange) {
+      onSettingsChange({
+        roundToWhole: true,
+        showVergiNo: false,
+        showOdemeBilgileri: false,
+        showNotlar: false,
+        showCurrency: false,
+        vatIncluded: true
+      });
     }
   };
 
@@ -86,10 +115,18 @@ export default function CompanyInfo({
                 variant="outlined"
                 color="error"
                 onClick={() => onLogoChange('')}
+                sx={{ mr: 2 }}
               >
                 Logoyu Kaldır
               </Button>
             )}
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={handlePresetClick}
+            >
+              Özen Elektrik
+            </Button>
           </Box>
           {logo && (
             <Box sx={{ mt: 2, textAlign: 'center' }}>

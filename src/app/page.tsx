@@ -7,6 +7,7 @@ import ClientInfo from '@/components/ClientInfo';
 import TableSettings from '@/components/TableSettings';
 import ProductTable from '@/components/ProductTable';
 import QuotePreview from '@/components/QuotePreview';
+import PDFUploader from '@/components/PDFUploader';
 import { Quote, Product } from '@/types';
 import html2pdf from 'html2pdf.js';
 
@@ -155,6 +156,15 @@ export default function Home() {
         onPhoneChange={(value) => handleCompanyInfoChange('phone', value)}
         onAddressChange={(value) => handleCompanyInfoChange('address', value)}
         onLogoChange={(value) => handleCompanyInfoChange('logo', value)}
+        onSettingsChange={(settings) => {
+          setRoundToWhole(settings.roundToWhole);
+          setShowVergiNo(settings.showVergiNo);
+          setShowOdemeBilgileri(settings.showOdemeBilgileri);
+          setShowNotlar(settings.showNotlar);
+          setVatIncluded(settings.vatIncluded);
+          // Set today's date
+          handleCompanyInfoChange('date', new Date().toLocaleDateString('tr-TR'));
+        }}
       />
 
       <ClientInfo 

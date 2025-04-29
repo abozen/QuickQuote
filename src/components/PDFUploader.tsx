@@ -1,79 +1,99 @@
 import { useState } from 'react';
-import { Box, Button, TextField, Typography, Alert } from '@mui/material';
+import { Box, Button, Typography, Alert } from '@mui/material';
 import { Product } from '@/types';
 
-interface TextUploaderProps {
+interface PDFUploaderProps {
   onProductsExtracted: (products: Product[]) => void;
 }
 
-export default function TextUploader({ onProductsExtracted }: TextUploaderProps) {
-  const [text, setText] = useState('');
+export default function PDFUploader({ onProductsExtracted }: PDFUploaderProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  const handleParse = () => {
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
     setIsLoading(true);
     setError(null);
     setSuccess(null);
 
     try {
-      // Kullanıcının yapıştırdığı metni parse et
-      const parsed = JSON.parse(text);
+      const formData = new FormData();
+      formData.append('file', file);
 
-      if (!Array.isArray(parsed)) {
-        throw new Error('Geçerli bir ürün listesi değil.');
+      const response = await fetch('http://localhost:8000/extract-products', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'PDF işlenirken bir hata oluştu');
       }
 
-      const extractedProducts: Product[] = parsed.map((item) => ({
-        id: Math.random().toString(36).substr(2, 9),
-        description: item.description,
-        brand: item.brand || '',
-        unit: item.unit,
-        quantity: item.quantity,
-        unitPrice: item.unitPrice,
-        totalPrice: item.totalPrice,
-      }));
+      const data = await response.json();
+      console.log('PDF İşleme Sonucu:', data);
 
-      if (extractedProducts.length > 0) {
-        onProductsExtracted(extractedProducts);
-        setSuccess(`${extractedProducts.length} ürün başarıyla yüklendi.`);
+      if (data.products?.items && Array.isArray(data.products.items)) {
+        const extractedProducts: Product[] = data.products.items.map((item: any) => {
+          const unitPrice = parseFloat(item.net_fiyat || '0');
+          const quantity = parseFloat(item.miktar || '0');
+          // Eğer tutar null ise, birim fiyat * miktar olarak hesapla
+          const totalPrice = item.tutar ? parseFloat(item.tutar) : unitPrice * quantity;
+
+          return {
+            id: Math.random().toString(36).substr(2, 9),
+            description: item.aciklama || '',
+            brand: item.marka || '',
+            unit: item.birim || 'adet',
+            quantity: quantity,
+            unitPrice: unitPrice,
+            totalPrice: totalPrice,
+          };
+        });
+
+        if (extractedProducts.length > 0) {
+          onProductsExtracted(extractedProducts);
+          setSuccess(`${extractedProducts.length} ürün başarıyla yüklendi.`);
+        } else {
+          setError('PDF içinde ürün bulunamadı.');
+        }
       } else {
-        setError('JSON içinde ürün bulunamadı.');
+        setError('Geçersiz veri formatı. Ürün listesi bulunamadı.');
       }
+
     } catch (err: any) {
-      console.error('JSON parse hatası:', err);
-      setError('Geçersiz JSON formatı. Lütfen doğru formatta JSON yapıştırın.');
+      console.error('PDF işleme hatası:', err);
+      setError(err.message || 'PDF işlenirken bir hata oluştu');
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <Box sx={{ textAlign: 'center' }}>
-      <TextField
-        label="Ürün JSON Verisi Yapıştırın"
-        multiline
-        rows={20}
-        fullWidth
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-        variant="outlined"
-        sx={{ mt: 2 }}
+    <Box sx={{ textAlign: 'center', mt: 4 }}>
+      <input
+        accept=".pdf"
+        style={{ display: 'none' }}
+        id="pdf-file-upload"
+        type="file"
+        onChange={handleFileUpload}
       />
-
-      <Button
-        variant="contained"
-        sx={{ mt: 2 }}
-        onClick={handleParse}
-        disabled={isLoading || !text}
-      >
-        Ürünleri Çıkar
-      </Button>
+      <label htmlFor="pdf-file-upload">
+        <Button
+          variant="contained"
+          component="span"
+          disabled={isLoading}
+        >
+          PDF Yükle
+        </Button>
+      </label>
 
       {isLoading && (
         <Typography variant="body2" sx={{ mt: 2 }}>
-          Ürünler çıkarılıyor...
+          PDF işleniyor...
         </Typography>
       )}
 

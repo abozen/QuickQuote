@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Box, Typography, FormControlLabel, Checkbox, TextField, Button, Alert, Grid } from '@mui/material';
 import { Product } from '@/types';
+import PDFUploader from './PDFUploader';
 
 interface TableSettingsProps {
   roundToWhole: boolean;
@@ -59,7 +60,6 @@ export default function TableSettings({
     setSuccess(null);
 
     try {
-      // Kullanıcının yapıştırdığı metni parse et
       const parsed = JSON.parse(jsonData);
 
       if (!Array.isArray(parsed)) {
@@ -67,7 +67,6 @@ export default function TableSettings({
       }
 
       const extractedProducts: Product[] = parsed.map((item) => {
-        // Birim fiyata zam oranını uygula
         const increasedUnitPrice = item.unitPrice * (1 + priceIncreaseRate / 100);
         const totalPrice = increasedUnitPrice * item.quantity;
 
@@ -196,44 +195,49 @@ export default function TableSettings({
         </Grid>
       </Grid>
 
-      <Typography fontWeight={700} mb={1}>JSON Veri</Typography>
-      <TextField
-        fullWidth
-        multiline
-        rows={4}
-        value={jsonData}
-        onChange={(e) => onJsonDataChange(e.target.value)}
-        placeholder="JSON verisini buraya yapıştırın..."
-        variant="outlined"
-        sx={{ mb: 2 }}
-      />
-
-      <Button
-        variant="contained"
-        onClick={handleParse}
-        disabled={isLoading || !jsonData}
-        sx={{ mb: 2 }}
-      >
-        Ürünleri Çıkar
-      </Button>
-
-      {isLoading && (
-        <Typography variant="body2" sx={{ mb: 2 }}>
-          Ürünler çıkarılıyor...
-        </Typography>
-      )}
-
-      {error && (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          {error}
-        </Alert>
-      )}
-
-      {success && (
-        <Alert severity="success" sx={{ mb: 2 }}>
-          {success}
-        </Alert>
-      )}
+      <Typography fontWeight={700} mb={1}>Ürün Verisi</Typography>
+      <Grid container spacing={30}>
+        <Grid item xs={12} md={6}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <PDFUploader onProductsExtracted={onProductsExtracted} />
+            {isLoading && (
+              <Typography variant="body2" color="primary">
+                PDF işleniyor...
+              </Typography>
+            )}
+            {error && (
+              <Alert severity="error">
+                {error}
+              </Alert>
+            )}
+            {success && (
+              <Alert severity="success">
+                {success}
+              </Alert>
+            )}
+          </Box>
+        </Grid>
+        <Grid item xs={12} md={6}>
+          <TextField
+            fullWidth
+            multiline
+            rows={4}
+            value={jsonData}
+            onChange={(e) => onJsonDataChange(e.target.value)}
+            placeholder="JSON verisini buraya yapıştırın..."
+            variant="outlined"
+            sx={{ mb: 2 }}
+          />
+          <Button
+            variant="contained"
+            onClick={handleParse}
+            disabled={isLoading || !jsonData}
+            sx={{ mb: 2 }}
+          >
+            Ürünleri Çıkar
+          </Button>
+        </Grid>
+      </Grid>
     </Box>
   );
 } 

@@ -11,6 +11,7 @@ interface QuotePreviewProps {
   showOdemeBilgileri?: boolean;
   showNotlar?: boolean;
   showCurrency?: boolean;
+  vatIncluded?: boolean;
 }
 
 // Format number to financial style (e.g., 10.000,50)
@@ -27,7 +28,8 @@ export default function QuotePreview({
   showVergiNo = true,
   showOdemeBilgileri = true,
   showNotlar = true,
-  showCurrency = true
+  showCurrency = true,
+  vatIncluded = true
 }: QuotePreviewProps) {
   // Modern renk paleti
   const colors = {
@@ -110,6 +112,7 @@ export default function QuotePreview({
       minHeight: '100%',
       display: 'flex',
       flexDirection: 'column',
+      position: 'relative', // Add this for absolute positioning of date
       // Landscape orientation settings
       pageBreakInside: 'avoid',
       '@media print': {
@@ -120,16 +123,28 @@ export default function QuotePreview({
         margin: 0
       }
     }}>
+      {/* Date - Fixed in top-right corner of the paper */}
+      <Box sx={{ 
+        position: 'absolute', 
+        top: 8,
+        right: 8,
+        textAlign: 'right'
+      }}>
+        <Typography variant="body2" fontSize={14} color={colors.primary}>
+          Tarih: {new Date(quote.companyInfo.date).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })}
+        </Typography>
+      </Box>
+
       {/* Top Header - Company Info & Title */}
       <Grid container spacing={1} sx={{ mb: 1 }}>
         {/* Company Info & Logo - ENLARGED */}
-        <Grid item xs={8}>
+        <Grid item xs={12}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
             {quote.companyInfo.logo ? (
               <img
                 src={quote.companyInfo.logo}
                 alt="Company Logo"
-                style={{ maxWidth: '100px', height: 'auto', maxHeight: '60px', objectFit: 'contain' }}
+                style={{ maxWidth: '200px', height: 'auto', maxHeight: '120px', objectFit: 'contain' }}
               />
             ) : (
               <Typography variant="h5" fontWeight={700} color={colors.primary}>
@@ -137,29 +152,17 @@ export default function QuotePreview({
               </Typography>
             )}
             <Box>
-              <Typography variant="body1" fontWeight={600} fontSize={14} color={colors.primary}>
+              <Typography variant="body1" fontWeight={600} fontSize={18} color={colors.primary}>
                 {quote.companyInfo.name || '-'}
               </Typography>
-              <Typography variant="body2" fontSize={12} color={colors.primary}>
+              <Typography variant="body2" fontSize={14} color={colors.primary}>
                 {quote.companyInfo.address || '-'}
               </Typography>
-              <Typography variant="body2" fontSize={12} color={colors.primary}>
+              <Typography variant="body2" fontSize={14} color={colors.primary}>
                 {quote.companyInfo.phone || '-'}
                 {showVergiNo && (' • Vergi No: 12345-6781')}
               </Typography>
             </Box>
-          </Box>
-        </Grid>
-        
-        {/* Title and Date */}
-        <Grid item xs={4}>
-          <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'center', alignItems: 'flex-end' }}>
-            <Typography variant="h6" fontWeight={700} color={colors.primary} textAlign="right">
-              
-            </Typography>
-            <Typography variant="body2" fontSize={12} color={colors.primary} sx={{ mt: 1 }}>
-              Tarih: {new Date(quote.companyInfo.date).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })}
-            </Typography>
           </Box>
         </Grid>
       </Grid>
@@ -173,7 +176,7 @@ export default function QuotePreview({
 
       {/* Product Table - Ultra compact */}
       <Box sx={{ mb: 1, overflow: 'auto' }}>
-        <Table size="small" sx={{ tableLayout: 'fixed' }}>
+        <Table size="small" sx={{ tableLayout: 'fixed', width: '100%' }}>
           <TableHead>
             <TableRow>
               <TableCell sx={{ ...styles.tableHeader, width: '4%', textAlign: 'center' }}>SIRA</TableCell>
@@ -217,9 +220,55 @@ export default function QuotePreview({
         </Table>
       </Box>
 
+      {/* Totals Section - Moved to below right corner of table */}
+      <Box sx={{ 
+        display: 'flex',
+        justifyContent: 'flex-end', // Align to right side
+        mb: 1
+      }}>
+        <Box sx={{ 
+          minWidth: 200,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 1,
+          p: 1,
+          background: colors.primary,
+          borderRadius: 1,
+          color: 'white',
+          height: 'fit-content'
+        }}>
+          {vatIncluded && (
+            <>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Typography variant="body2" fontSize={11}>Ara Toplam:</Typography>
+                <Typography variant="body2" fontSize={11} fontWeight={500}>
+                  {formatNumber(quote.subtotal, roundToWhole)}
+                </Typography>
+              </Box>
+              
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Typography variant="body2" fontSize={11}>KDV (%{quote.vatRate}):</Typography>
+                <Typography variant="body2" fontSize={11} fontWeight={500}>
+                  {formatNumber(quote.vatAmount, roundToWhole)}
+                </Typography>
+              </Box>
+              
+              <Divider sx={{ my: 0.5, borderColor: 'rgba(255,255,255,0.3)' }} />
+            </>
+          )}
+          
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Typography variant="body1" fontSize={12} fontWeight={700}>GENEL TOPLAM:</Typography>
+            <Typography variant="body1" fontSize={12} fontWeight={700}>
+              {formatNumber(vatIncluded ? quote.subtotal + quote.vatAmount : quote.subtotal, roundToWhole)}
+            </Typography>
+          </Box>
+        </Box>
+      </Box>
+
       {/* Bottom Info - Super compact horizontal layout */}
       <Grid container spacing={1} sx={{ mt: 'auto' }}>
-        <Grid item xs={4}>
+        <Grid item xs={6}>
           {showOdemeBilgileri && (
             <Box sx={styles.infoBox}>
               <Typography sx={styles.sectionTitle}>ÖDEME BİLGİLERİ</Typography>
@@ -233,7 +282,7 @@ export default function QuotePreview({
           )}
         </Grid>
         
-        <Grid item xs={4}>
+        <Grid item xs={6}>
           {showNotlar && (
             <Box sx={styles.infoBox}>
               <Typography sx={styles.sectionTitle}>NOTLAR</Typography>
@@ -242,43 +291,6 @@ export default function QuotePreview({
               </Typography>
             </Box>
           )}
-        </Grid>
-        
-        <Grid item xs={4}>
-          <Box sx={styles.totalBox}>
-            <Grid container spacing={0.5}>
-              <Grid item xs={7}>
-                <Typography variant="body2" fontSize={10} color="white">Ara Toplam:</Typography>
-              </Grid>
-              <Grid item xs={5}>
-                <Typography variant="body2" fontSize={10} fontWeight={500} color="white" textAlign="right">
-                  {formatNumber(quote.subtotal, roundToWhole)}
-                </Typography>
-              </Grid>
-              
-              <Grid item xs={7}>
-                <Typography variant="body2" fontSize={10} color="white">KDV (%{quote.vatRate}):</Typography>
-              </Grid>
-              <Grid item xs={5}>
-                <Typography variant="body2" fontSize={10} fontWeight={500} color="white" textAlign="right">
-                  {formatNumber(quote.vatAmount, roundToWhole)}
-                </Typography>
-              </Grid>
-              
-              <Grid item xs={12}>
-                <Divider sx={{ my: 0.5, borderColor: 'rgba(255,255,255,0.3)' }} />
-              </Grid>
-              
-              <Grid item xs={7}>
-                <Typography variant="body1" fontSize={12} fontWeight={700} color="white">GENEL TOPLAM:</Typography>
-              </Grid>
-              <Grid item xs={5}>
-                <Typography variant="body1" fontSize={12} fontWeight={700} color="white" textAlign="right">
-                  {formatNumber(quote.subtotal + quote.vatAmount, roundToWhole)}
-                </Typography>
-              </Grid>
-            </Grid>
-          </Box>
         </Grid>
       </Grid>
     </Paper>
