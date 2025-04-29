@@ -75,7 +75,11 @@ export default function ProductTable({
       unitPrice: newProduct.unitPrice,
       totalPrice: (newProduct.quantity || 1) * newProduct.unitPrice,
     };
-    onChange([...products, product]);
+    const updatedProducts = [...products, product];
+    const newSubtotal = updatedProducts.reduce((sum, product) => sum + product.totalPrice, 0);
+    const newVatAmount = vatIncluded ? newSubtotal * (vatRate / 100) : 0;
+    
+    onChange(updatedProducts);
     setNewProduct({
       description: '',
       brand: '',

@@ -68,35 +68,94 @@ export default function Home() {
 
   const handleExportPDF = () => {
     const element = document.getElementById('teklif-pdf');
-    if (element) {
-      const opt = {
-        margin: [5, 5, 5, 5], // Minimal margins (top, right, bottom, left) in mm
-        filename: 'teklif.pdf',
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { 
-          scale: 2, // Higher scale for better quality
-          useCORS: true,
-          logging: false,
-          letterRendering: true,
-          allowTaint: true
-        },
-        jsPDF: { 
-          unit: 'mm', 
-          format: 'a4', 
-          orientation: 'landscape',
-          compress: true,
-          precision: 16,
-          hotfixes: ["px_scaling"]
-        },
-        pagebreak: { mode: ['avoid-all'] } // Try to avoid breaking elements
-      };
+    if (!element) return;
+
+    // First, get the actual height of the content
+    const contentHeight = element.scrollHeight;
+    const contentWidth = element.scrollWidth;
+    
+    // Set up options for html2pdf
+    const opt = {
+      margin: [3, 3, 3, 3], // Minimal margins (top, right, bottom, left) in mm
+      filename: 'teklif.pdf',
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { 
+        scale: 2, // Higher scale for better quality
+        useCORS: true,
+        logging: false,
+        letterRendering: true,
+        allowTaint: true
+      },
+      jsPDF: { 
+        unit: 'mm', 
+        format: 'a4', 
+        orientation: 'landscape',
+        compress: true,
+        precision: 16,
+        hotfixes: ["px_scaling"]
+      },
+      // Force content to fit on one page
+      pagebreak: { mode: 'avoid-all' }
+    };
   
-      // Create promise to handle PDF generation
-      html2pdf().set(opt).from(element).save().catch(err => {
-        console.error('PDF generation error:', err);
-        alert('PDF oluşturulurken bir hata oluştu. Lütfen tekrar deneyiniz.');
-      });
-    }
+    // Create a promise to handle PDF generation with auto-scaling
+    html2pdf().from(element).set(opt).toPdf().get('pdf').then((pdf: any) => {
+      // Get available page size (A4 landscape: 297mm × 210mm)
+      const pageWidth = pdf.internal.pageSize.getWidth() - 6; // minus margins
+      const pageHeight = pdf.internal.pageSize.getHeight() - 6; // minus margins
+      
+      // Calculate scale factor to fit content on one page
+      const scaleFactorWidth = pageWidth / (contentWidth / 3.78); // px to mm conversion factor
+      const scaleFactorHeight = pageHeight / (contentHeight / 3.78); // px to mm conversion factor
+      
+      // Use the smallest scale factor to ensure everything fits
+      const scaleFactor = Math.min(scaleFactorWidth, scaleFactorHeight, 1);
+      
+      // Apply scaling if needed
+      if (scaleFactor < 1) {
+        // Get the root element again and apply scale transform
+        const pdfElement = document.getElementById('teklif-pdf');
+        if (!pdfElement) return;
+        
+        const originalTransform = pdfElement.style.transform;
+        const originalTransformOrigin = pdfElement.style.transformOrigin;
+        
+        // Apply temporary scaling
+        pdfElement.style.transformOrigin = 'top left';
+        pdfElement.style.transform = `scale(${scaleFactor})`;
+        
+        // Regenerate PDF with the scaled content
+        opt.html2canvas.scale = 2 * scaleFactor; // Adjust scale based on content
+        
+        // Generate the final PDF
+        html2pdf().from(pdfElement).set(opt).save().then(() => {
+          // Reset the styling after PDF generation
+          if (originalTransform) {
+            pdfElement.style.transform = originalTransform;
+          }
+          if (originalTransformOrigin) {
+            pdfElement.style.transformOrigin = originalTransformOrigin;
+          }
+        }).catch((err: Error) => {
+          console.error('PDF scaling error:', err);
+          alert('PDF ölçeklendirme sırasında bir hata oluştu. Lütfen tekrar deneyiniz.');
+          
+          // Reset the styling in case of error
+          if (originalTransform) {
+            pdfElement.style.transform = originalTransform;
+          }
+          if (originalTransformOrigin) {
+            pdfElement.style.transformOrigin = originalTransformOrigin;
+          }
+        });
+      } else {
+        // If no scaling needed, just save the PDF
+        pdf.save('teklif.pdf');
+      }
+    }).catch((err: Error) => {
+      console.error('PDF generation error:', err);
+      alert('PDF oluşturulurken bir hata oluştu. Lütfen tekrar deneyiniz.');
+    });
   };
 
   const handleCompanyInfoChange = (field: keyof typeof quote.companyInfo, value: string) => {
@@ -204,7 +263,7 @@ export default function Home() {
       <TabPanel value={tabValue} index={0}>
         <ProductTable
           products={quote.products}
-          onChange={(products) => setQuote({ ...quote, products })}
+          onChange={(products) => handleProductsExtracted(products)}
           subtotal={quote.subtotal}
           vatAmount={quote.vatAmount}
           vatIncluded={vatIncluded}
